@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Queue Manager</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f9f9f9;
+                margin: 0;
+                padding: 0;
+            }
+    
+            h1 {
+                text-align: center;
+                color: #333;
+            }
+    
+            input[type="text"] {
+                width: 70%;
+                padding: 10px;
+                margin: 0 100px 10px 100px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+            }
+            
+            .container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            button {
+                background-color: #007bff;
+                color: #fff;
+                border: none;
+                padding: 10px 20px;
+                cursor: pointer;
+                border-radius: 5px;
+                margin: 0 5px;
+            }
+    
+            button:hover {
+                background-color: #0056b3;
+            }
+    
+            ul {
+                list-style: none;
+                padding: 0;
+            }
+    
+            li {
+                display: flex;
+                align-items: center;
+                margin-bottom: 5px;
+                background-color: #f9f9f9;
+                padding: 10px;
+                border-radius: 10px;
+                border: 1px solid #007bff;
+                margin: 10px 150px;
+            }
+
+            .index {
+                color: #007bff;
+                display: inline-block;
+                width: 20px;
+                text-align: left;
+            }
+
+            .content {
+                flex-grow: 1;
+                text-align: center;
+            }
+        </style>
+    </head>
+<body>
+    <h1>Queue Manager</h1>
+    <div class="container">
+        <input type="text" id="nameInput" placeholder="Enter a name" onkeydown="handleKeyPress(event)">
+    </div>
+    <div class="container">
+        <button onclick="addToQueue(); document.getElementById('nameInput').focus()">Add to Queue</button>
+        <button onclick="removeFromQueue(); document.getElementById('nameInput').focus()">Remove from Queue</button>
+        <button onclick="removeByName(); document.getElementById('nameInput').focus()">Remove by Name</button>
+        <button onclick="undo(); document.getElementById('nameInput').focus()">Undo</button>
+    </div>
+    <ul id="queueList"></ul>
+
+    <script>
+        const queue = JSON.parse(localStorage.getItem('queue')) || [];
+        const actionHistory = [];
+
+        function addToQueue() {
+            const name = document.getElementById("nameInput").value;
+            if (name) {
+                queue.push(name);
+                updateQueueList();
+                saveToLocalStorage();
+                actionHistory.push({ type: 'add', name });
+                document.getElementById('nameInput').value = ''
+            }
+        }
+
+        function removeFromQueue() {
+            if (queue.length > 0) {
+                const removedName = queue.shift();
+                updateQueueList();
+                saveToLocalStorage();
+                actionHistory.push({ type: 'remove', name: removedName });
+            }
+        }
+
+        function removeByName() {
+            const nameToRemove = document.getElementById("nameInput").value;
+            const index = queue.indexOf(nameToRemove);
+            if (index !== -1) {
+                const removedName = queue.splice(index, 1)[0];
+                updateQueueList();
+                saveToLocalStorage();
+                actionHistory.push({ type: 'remove', name: removedName, index });
+                document.getElementById('nameInput').value = ''
+            } else {
+                alert(`Name "${nameToRemove}" not found in the queue.`);
+            }
+        }
+
+        function undo() {
+            const lastAction = actionHistory.pop();
+            if (lastAction) {
+                if (lastAction.type === 'add') {
+                    queue.splice(queue.length - 1, 1);
+                } else if (lastAction.type === 'remove') {
+                    queue.splice(lastAction.index, 0, lastAction.name);
+                }
+                updateQueueList();
+                saveToLocalStorage();
+            }
+        }
+
+        function updateQueueList() {
+            const queueList = document.getElementById("queueList");
+            queueList.innerHTML = "";
+            
+            const reversedQueue = queue.slice().reverse();
+            reversedQueue.forEach((name, index) => {
+                const li = document.createElement("li");
+                const indexSpan = document.createElement("span");
+                indexSpan.className = "index";
+                indexSpan.textContent = (reversedQueue.length - index) + ".";
+                // const nameTextNode = document.createTextNode(" " + name);
+                const nameSpan = document.createElement("span");
+                nameSpan.textContent = name;
+                nameSpan.className = "content";
+                li.appendChild(indexSpan);
+                li.appendChild(nameSpan);
+                queueList.appendChild(li);
+            });
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                addToQueue();
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('queue', JSON.stringify(queue));
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                addToQueue();
+            }
+        }
+
+        // Initial population of queue list
+        updateQueueList();
+    </script>
+</body>
+</html>
